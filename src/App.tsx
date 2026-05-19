@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { LayoutDashboard, Users, FileBarChart, LogOut, Bell } from 'lucide-react';
-import Dashboard from './components/Dashboard';
-import ClientesTable from './components/ClientesTable';
-import Reportes from './components/Reportes';
+
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const ClientesTable = lazy(() => import('./components/ClientesTable'));
+const Reportes = lazy(() => import('./components/Reportes'));
+
 import { Cliente, ChartData } from './types';
 
 const MOCK_CLIENTES: Cliente[] = [
@@ -102,15 +104,21 @@ function App() {
 
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto p-8">
-          {activeTab === 'dashboard' && (
-            <Dashboard clientes={MOCK_CLIENTES} chartData={MOCK_CHART_DATA} />
-          )}
-          {activeTab === 'clientes' && (
-            <ClientesTable clientes={MOCK_CLIENTES} />
-          )}
-          {activeTab === 'reportes' && (
-            <Reportes />
-          )}
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-full">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-msc-green"></div>
+            </div>
+          }>
+            {activeTab === 'dashboard' && (
+              <Dashboard clientes={MOCK_CLIENTES} chartData={MOCK_CHART_DATA} />
+            )}
+            {activeTab === 'clientes' && (
+              <ClientesTable clientes={MOCK_CLIENTES} />
+            )}
+            {activeTab === 'reportes' && (
+              <Reportes />
+            )}
+          </Suspense>
         </div>
       </main>
     </div>
