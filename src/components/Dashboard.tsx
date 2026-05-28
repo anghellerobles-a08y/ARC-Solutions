@@ -9,17 +9,35 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
-  const totalMora = clientes.reduce((acc, curr) => acc + curr.monto, 0);
-  const clientesEnMora = clientes.length;
-  const casosCriticos = clientes.filter(c => c.diasMora >= 60).length;
-  const promedioDias = clientes.reduce((acc, curr) => acc + curr.diasMora, 0) / clientes.length;
+  // ⚡ Bolt: Memoize statistical calculations to prevent expensive O(N) recalculations on every re-render.
+  // Consolidates reductions into a single pass for optimal performance.
+  const { totalMora, clientesEnMora, casosCriticos, promedioDias } = React.useMemo(() => {
+    let total = 0;
+    let criticos = 0;
+    let totalDias = 0;
 
-  const stats = [
+    clientes.forEach(cliente => {
+      total += cliente.monto;
+      totalDias += cliente.diasMora;
+      if (cliente.diasMora >= 60) criticos++;
+    });
+
+    const avgDias = clientes.length > 0 ? totalDias / clientes.length : 0;
+
+    return {
+      totalMora: total,
+      clientesEnMora: clientes.length,
+      casosCriticos: criticos,
+      promedioDias: avgDias,
+    };
+  }, [clientes]);
+
+  const stats = React.useMemo(() => [
     { title: 'Mora Total', value: `${totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
     { title: 'Clientes en Mora', value: clientesEnMora, icon: <Users className="text-msc-dark" />, sub: 'Total deudores' },
     { title: 'Casos Críticos', value: casosCriticos, icon: <AlertTriangle className="text-red-600" />, sub: '+60 días de mora' },
     { title: 'Promedio Días', value: Math.round(promedioDias), icon: <Clock className="text-msc-dark" />, sub: 'Días de atraso' },
-  ];
+  ], [totalMora, clientesEnMora, casosCriticos, promedioDias]);
 
   return (
     <div className="space-y-6">
