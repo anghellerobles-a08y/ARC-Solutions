@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { LayoutDashboard, Users, FileBarChart, LogOut, Bell } from 'lucide-react';
-import Dashboard from './components/Dashboard';
+import { useState, lazy, Suspense } from 'react';
+const Dashboard = lazy(() => import('./components/Dashboard'));
+import { LayoutDashboard, Users, FileBarChart, LogOut, Bell, Loader2 } from 'lucide-react';
 import ClientesTable from './components/ClientesTable';
 import Reportes from './components/Reportes';
 import { Cliente, ChartData } from './types';
@@ -103,7 +103,14 @@ function App() {
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto p-8">
           {activeTab === 'dashboard' && (
-            <Dashboard clientes={MOCK_CLIENTES} chartData={MOCK_CHART_DATA} />
+            <Suspense fallback={
+              <div className="flex flex-col items-center justify-center h-full gap-4 text-slate-400">
+                <Loader2 className="animate-spin" size={40} />
+                <p className="font-medium">Cargando Dashboard...</p>
+              </div>
+            }>
+              <Dashboard clientes={MOCK_CLIENTES} chartData={MOCK_CHART_DATA} />
+            </Suspense>
           )}
           {activeTab === 'clientes' && (
             <ClientesTable clientes={MOCK_CLIENTES} />
