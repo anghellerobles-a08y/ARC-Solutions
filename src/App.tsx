@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import { LayoutDashboard, Users, FileBarChart, LogOut, Bell } from 'lucide-react';
-import Dashboard from './components/Dashboard';
+import { useState, lazy, Suspense } from 'react';
+import { LayoutDashboard, Users, FileBarChart, LogOut, Bell, Loader2 } from 'lucide-react';
 import ClientesTable from './components/ClientesTable';
 import Reportes from './components/Reportes';
 import { Cliente, ChartData } from './types';
+
+// Lazy load Dashboard to reduce initial bundle size (Recharts is heavy)
+const Dashboard = lazy(() => import('./components/Dashboard'));
 
 const MOCK_CLIENTES: Cliente[] = [
   { id: 1, nombre: 'Carlos Méndez', ci: '12345678', monto: 12500, diasMora: 45, estado: 'warning' },
@@ -103,7 +105,13 @@ function App() {
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto p-8">
           {activeTab === 'dashboard' && (
-            <Dashboard clientes={MOCK_CLIENTES} chartData={MOCK_CHART_DATA} />
+            <Suspense fallback={
+              <div className="h-full w-full flex items-center justify-center">
+                <Loader2 className="animate-spin text-msc-green" size={48} />
+              </div>
+            }>
+              <Dashboard clientes={MOCK_CLIENTES} chartData={MOCK_CHART_DATA} />
+            </Suspense>
           )}
           {activeTab === 'clientes' && (
             <ClientesTable clientes={MOCK_CLIENTES} />
