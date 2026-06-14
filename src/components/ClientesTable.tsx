@@ -12,10 +12,13 @@ const ClientesTable: React.FC<ClientesTableProps> = ({ clientes }) => {
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const filteredClientes = clientes.filter(c =>
-    c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.ci.includes(searchTerm)
-  );
+  // Memoize filtering to prevent recalculation on every re-render (e.g. when modal opens/closes)
+  const filteredClientes = React.useMemo(() => {
+    return clientes.filter(c =>
+      c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.ci.includes(searchTerm)
+    );
+  }, [clientes, searchTerm]);
 
   const getStatusBadge = (estado: Cliente['estado']) => {
     switch (estado) {
