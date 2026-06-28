@@ -12,10 +12,14 @@ const ClientesTable: React.FC<ClientesTableProps> = ({ clientes }) => {
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const filteredClientes = clientes.filter(c =>
-    c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.ci.includes(searchTerm)
-  );
+  // Memoize filtered results to optimize performance during search and parent re-renders
+  const filteredClientes = React.useMemo(() => {
+    const normalizedSearch = searchTerm.toLowerCase();
+    return clientes.filter(c =>
+      c.nombre.toLowerCase().includes(normalizedSearch) ||
+      c.ci.includes(searchTerm)
+    );
+  }, [clientes, searchTerm]);
 
   const getStatusBadge = (estado: Cliente['estado']) => {
     switch (estado) {
