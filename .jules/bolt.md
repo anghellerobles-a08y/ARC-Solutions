@@ -1,0 +1,3 @@
+## 2025-05-15 - Optimizing Initial Bundle Size and Render Performance
+**Learning:** Implementing code splitting in App.tsx using React.lazy and Suspense significantly reduced the initial JavaScript bundle size from 538.42 kB to 151.88 kB (~72% reduction). This is particularly effective in Vite-based projects where heavy libraries like Recharts can bloat the main chunk. Additionally, memoizing statistical reductions in Dashboard and complex filtering in ClientesTable ensures consistent UI responsiveness during parent-triggered re-renders.
+**Action:** Use React.lazy for route-level or tab-level components that pull in large dependencies. Always memoize data transformations that depend on props or state to avoid unnecessary O(N) operations during every render cycle.
