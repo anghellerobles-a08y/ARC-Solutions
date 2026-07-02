@@ -9,17 +9,38 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
-  const totalMora = clientes.reduce((acc, curr) => acc + curr.monto, 0);
-  const clientesEnMora = clientes.length;
-  const casosCriticos = clientes.filter(c => c.diasMora >= 60).length;
-  const promedioDias = clientes.reduce((acc, curr) => acc + curr.diasMora, 0) / clientes.length;
+  // Consolidate statistics calculations into a single O(N) pass and memoize the result.
+  const statsValues = React.useMemo(() => {
+    if (clientes.length === 0) {
+      return { totalMora: 0, clientesEnMora: 0, casosCriticos: 0, promedioDias: 0 };
+    }
 
-  const stats = [
-    { title: 'Mora Total', value: `${totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
-    { title: 'Clientes en Mora', value: clientesEnMora, icon: <Users className="text-msc-dark" />, sub: 'Total deudores' },
-    { title: 'Casos Críticos', value: casosCriticos, icon: <AlertTriangle className="text-red-600" />, sub: '+60 días de mora' },
-    { title: 'Promedio Días', value: Math.round(promedioDias), icon: <Clock className="text-msc-dark" />, sub: 'Días de atraso' },
-  ];
+    const totals = clientes.reduce(
+      (acc, curr) => {
+        acc.totalMora += curr.monto;
+        acc.totalDias += curr.diasMora;
+        if (curr.diasMora >= 60) {
+          acc.casosCriticos += 1;
+        }
+        return acc;
+      },
+      { totalMora: 0, totalDias: 0, casosCriticos: 0 }
+    );
+
+    return {
+      totalMora: totals.totalMora,
+      clientesEnMora: clientes.length,
+      casosCriticos: totals.casosCriticos,
+      promedioDias: totals.totalDias / clientes.length,
+    };
+  }, [clientes]);
+
+  const stats = React.useMemo(() => [
+    { title: 'Mora Total', value: `${statsValues.totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
+    { title: 'Clientes en Mora', value: statsValues.clientesEnMora, icon: <Users className="text-msc-dark" />, sub: 'Total deudores' },
+    { title: 'Casos Críticos', value: statsValues.casosCriticos, icon: <AlertTriangle className="text-red-600" />, sub: '+60 días de mora' },
+    { title: 'Promedio Días', value: Math.round(statsValues.promedioDias), icon: <Clock className="text-msc-dark" />, sub: 'Días de atraso' },
+  ], [statsValues]);
 
   return (
     <div className="space-y-6">
