@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Search, Filter, Download } from 'lucide-react';
 import { Cliente } from '../types';
 import GestionModal from './GestionModal';
@@ -7,15 +7,20 @@ interface ClientesTableProps {
   clientes: Cliente[];
 }
 
-const ClientesTable: React.FC<ClientesTableProps> = ({ clientes }) => {
+const ClientesTable: React.FC<ClientesTableProps> = React.memo(({ clientes }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const filteredClientes = clientes.filter(c =>
-    c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.ci.includes(searchTerm)
-  );
+  // Memoize search filtering to prevent recalculating on every layout update or selection change
+  const filteredClientes = useMemo(() => {
+    const normalizedTerm = searchTerm.toLowerCase().trim();
+    if (!normalizedTerm) return clientes;
+    return clientes.filter(c =>
+      c.nombre.toLowerCase().includes(normalizedTerm) ||
+      c.ci.includes(normalizedTerm)
+    );
+  }, [clientes, searchTerm]);
 
   const getStatusBadge = (estado: Cliente['estado']) => {
     switch (estado) {
@@ -25,10 +30,14 @@ const ClientesTable: React.FC<ClientesTableProps> = ({ clientes }) => {
     }
   };
 
-  const handleGestionar = (cliente: Cliente) => {
+  const handleGestionar = useCallback((cliente: Cliente) => {
     setSelectedCliente(cliente);
     setIsModalOpen(true);
-  };
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -104,10 +113,12 @@ const ClientesTable: React.FC<ClientesTableProps> = ({ clientes }) => {
       <GestionModal
         isOpen={isModalOpen}
         cliente={selectedCliente}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleCloseModal}
       />
     </div>
   );
-};
+});
+
+ClientesTable.displayName = 'ClientesTable';
 
 export default ClientesTable;
