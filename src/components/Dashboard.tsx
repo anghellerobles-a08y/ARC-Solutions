@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, Users, AlertTriangle, Clock } from 'lucide-react';
 import { Cliente, ChartData } from '../types';
@@ -8,18 +8,28 @@ interface DashboardProps {
   chartData: ChartData[];
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
-  const totalMora = clientes.reduce((acc, curr) => acc + curr.monto, 0);
-  const clientesEnMora = clientes.length;
-  const casosCriticos = clientes.filter(c => c.diasMora >= 60).length;
-  const promedioDias = clientes.reduce((acc, curr) => acc + curr.diasMora, 0) / clientes.length;
+const Dashboard: React.FC<DashboardProps> = React.memo(({ clientes, chartData }) => {
+  // Memoize statistical calculations to avoid recalculating on unnecessary re-renders
+  const stats = useMemo(() => {
+    const totalMora = clientes.reduce((acc, curr) => acc + curr.monto, 0);
+    const clientesEnMora = clientes.length;
+    const casosCriticos = clientes.filter(c => c.diasMora >= 60).length;
+    const promedioDias = clientes.length > 0
+      ? clientes.reduce((acc, curr) => acc + curr.diasMora, 0) / clientes.length
+      : 0;
 
-  const stats = [
-    { title: 'Mora Total', value: `${totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
-    { title: 'Clientes en Mora', value: clientesEnMora, icon: <Users className="text-msc-dark" />, sub: 'Total deudores' },
-    { title: 'Casos Críticos', value: casosCriticos, icon: <AlertTriangle className="text-red-600" />, sub: '+60 días de mora' },
-    { title: 'Promedio Días', value: Math.round(promedioDias), icon: <Clock className="text-msc-dark" />, sub: 'Días de atraso' },
-  ];
+    return [
+      { title: 'Mora Total', value: `${totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
+      { title: 'Clientes en Mora', value: clientesEnMora, icon: <Users className="text-msc-dark" />, sub: 'Total deudores' },
+      { title: 'Casos Críticos', value: casosCriticos, icon: <AlertTriangle className="text-red-600" />, sub: '+60 días de mora' },
+      { title: 'Promedio Días', value: Math.round(promedioDias), icon: <Clock className="text-msc-dark" />, sub: 'Días de atraso' },
+    ];
+  }, [clientes]);
+
+  // Memoize top 3 clients for display to prevent slicing on every render
+  const topClientes = useMemo(() => {
+    return clientes.slice(0, 3);
+  }, [clientes]);
 
   return (
     <div className="space-y-6">
@@ -74,7 +84,7 @@ const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
         <div className="card">
           <h3 className="text-lg font-bold mb-4">Últimos Clientes en Mora</h3>
           <div className="space-y-4">
-            {clientes.slice(0, 3).map((cliente) => (
+            {topClientes.map((cliente) => (
               <div key={cliente.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
                 <div>
                   <p className="font-semibold text-sm">{cliente.nombre}</p>
@@ -94,6 +104,8 @@ const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
       </div>
     </div>
   );
-};
+});
+
+Dashboard.displayName = 'Dashboard';
 
 export default Dashboard;
