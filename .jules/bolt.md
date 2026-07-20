@@ -1,0 +1,3 @@
+## 2024-07-20 - React.lazy Code Splitting and Component Memoization
+**Learning:** Large initial bundles containing charting libraries (like Recharts) can trigger Vite build chunk warnings. Dynamically importing heavy view components using `React.lazy` and wrapping them in `Suspense` effectively splits the vendor dependencies, reducing the main bundle size significantly. Combining code-splitting with `React.memo` and `useMemo` optimizations yields a highly performant and robust frontend.
+**Action:** Always code-split heavy route-level or tab-level view components using React.lazy to maintain a compact initial bundle, especially when pulling in complex chart or table packages.
