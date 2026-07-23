@@ -1,8 +1,8 @@
 import React from 'react';
 import { Target, BarChart3, ClipboardCheck, CheckCircle2 } from 'lucide-react';
 
-const Reportes: React.FC = () => {
-  const metrics = [
+const Reportes: React.FC = React.memo(() => {
+  const metrics = React.useMemo(() => [
     {
       title: 'Eficiencia de Cobranza',
       value: '65%',
@@ -31,7 +31,7 @@ const Reportes: React.FC = () => {
       color: 'bg-purple-50',
       description: 'En proceso de cierre'
     },
-  ];
+  ], []);
 
   return (
     <div className="space-y-6">
@@ -64,6 +64,6 @@ const Reportes: React.FC = () => {
       </div>
     </div>
   );
-};
+});
 
 export default Reportes;
