@@ -9,10 +9,30 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
-  const totalMora = clientes.reduce((acc, curr) => acc + curr.monto, 0);
-  const clientesEnMora = clientes.length;
-  const casosCriticos = clientes.filter(c => c.diasMora >= 60).length;
-  const promedioDias = clientes.reduce((acc, curr) => acc + curr.diasMora, 0) / clientes.length;
+  // Consolidate statistics calculations into a single O(N) pass inside useMemo
+  const { totalMora, clientesEnMora, casosCriticos, promedioDias } = React.useMemo(() => {
+    let total = 0;
+    let critical = 0;
+    let totalDias = 0;
+    const len = clientes.length;
+
+    for (let i = 0; i < len; i++) {
+      const c = clientes[i];
+      total += c.monto;
+      totalDias += c.diasMora;
+      if (c.diasMora >= 60) {
+        critical++;
+      }
+    }
+
+    const avg = len > 0 ? totalDias / len : 0;
+    return {
+      totalMora: total,
+      clientesEnMora: len,
+      casosCriticos: critical,
+      promedioDias: avg,
+    };
+  }, [clientes]);
 
   const stats = [
     { title: 'Mora Total', value: `${totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
