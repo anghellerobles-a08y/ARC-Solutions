@@ -12,10 +12,15 @@ const ClientesTable: React.FC<ClientesTableProps> = ({ clientes }) => {
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const filteredClientes = clientes.filter(c =>
-    c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.ci.includes(searchTerm)
-  );
+  // Memoize search filtering logic to prevent unnecessary filtering operations on unrelated state changes
+  // Both name and CI fields are normalized to lowercase to maintain consistent search behavior
+  const filteredClientes = React.useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    return clientes.filter(c =>
+      c.nombre.toLowerCase().includes(term) ||
+      c.ci.toLowerCase().includes(term)
+    );
+  }, [clientes, searchTerm]);
 
   const getStatusBadge = (estado: Cliente['estado']) => {
     switch (estado) {
