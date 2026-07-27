@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, Users, AlertTriangle, Clock } from 'lucide-react';
 import { Cliente, ChartData } from '../types';
@@ -8,18 +8,40 @@ interface DashboardProps {
   chartData: ChartData[];
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
-  const totalMora = clientes.reduce((acc, curr) => acc + curr.monto, 0);
-  const clientesEnMora = clientes.length;
-  const casosCriticos = clientes.filter(c => c.diasMora >= 60).length;
-  const promedioDias = clientes.reduce((acc, curr) => acc + curr.diasMora, 0) / clientes.length;
+const Dashboard: React.FC<DashboardProps> = React.memo(({ clientes, chartData }) => {
+  // Consolidate calculations inside a single O(N) pass and cache them using useMemo
+  // to avoid recalculating stats during unrelated parent state changes or modal toggles.
+  const statsData = useMemo(() => {
+    let total = 0;
+    let critical = 0;
+    let totalDays = 0;
+    const len = clientes.length;
 
-  const stats = [
-    { title: 'Mora Total', value: `${totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
-    { title: 'Clientes en Mora', value: clientesEnMora, icon: <Users className="text-msc-dark" />, sub: 'Total deudores' },
-    { title: 'Casos Críticos', value: casosCriticos, icon: <AlertTriangle className="text-red-600" />, sub: '+60 días de mora' },
-    { title: 'Promedio Días', value: Math.round(promedioDias), icon: <Clock className="text-msc-dark" />, sub: 'Días de atraso' },
-  ];
+    for (let i = 0; i < len; i++) {
+      const c = clientes[i];
+      total += c.monto;
+      totalDays += c.diasMora;
+      if (c.diasMora >= 60) {
+        critical++;
+      }
+    }
+
+    const averageDays = len > 0 ? totalDays / len : 0;
+
+    return {
+      totalMora: total,
+      clientesEnMora: len,
+      casosCriticos: critical,
+      promedioDias: averageDays,
+    };
+  }, [clientes]);
+
+  const stats = useMemo(() => [
+    { title: 'Mora Total', value: `${statsData.totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
+    { title: 'Clientes en Mora', value: statsData.clientesEnMora, icon: <Users className="text-msc-dark" />, sub: 'Total deudores' },
+    { title: 'Casos Críticos', value: statsData.casosCriticos, icon: <AlertTriangle className="text-red-600" />, sub: '+60 días de mora' },
+    { title: 'Promedio Días', value: Math.round(statsData.promedioDias), icon: <Clock className="text-msc-dark" />, sub: 'Días de atraso' },
+  ], [statsData]);
 
   return (
     <div className="space-y-6">
@@ -94,6 +116,6 @@ const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
       </div>
     </div>
   );
-};
+});
 
 export default Dashboard;
