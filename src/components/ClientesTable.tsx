@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, Filter, Download } from 'lucide-react';
 import { Cliente } from '../types';
 import GestionModal from './GestionModal';
@@ -12,10 +12,15 @@ const ClientesTable: React.FC<ClientesTableProps> = ({ clientes }) => {
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const filteredClientes = clientes.filter(c =>
-    c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.ci.includes(searchTerm)
-  );
+  // Memoizing filtered results based on search criteria to optimize rendering performance
+  const filteredClientes = useMemo(() => {
+    const cleanSearch = searchTerm.trim().toLowerCase();
+    if (!cleanSearch) return clientes;
+    return clientes.filter(c =>
+      c.nombre.toLowerCase().includes(cleanSearch) ||
+      c.ci.includes(cleanSearch)
+    );
+  }, [clientes, searchTerm]);
 
   const getStatusBadge = (estado: Cliente['estado']) => {
     switch (estado) {
@@ -110,4 +115,4 @@ const ClientesTable: React.FC<ClientesTableProps> = ({ clientes }) => {
   );
 };
 
-export default ClientesTable;
+export default React.memo(ClientesTable);

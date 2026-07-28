@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, Users, AlertTriangle, Clock } from 'lucide-react';
 import { Cliente, ChartData } from '../types';
@@ -9,17 +9,38 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
-  const totalMora = clientes.reduce((acc, curr) => acc + curr.monto, 0);
-  const clientesEnMora = clientes.length;
-  const casosCriticos = clientes.filter(c => c.diasMora >= 60).length;
-  const promedioDias = clientes.reduce((acc, curr) => acc + curr.diasMora, 0) / clientes.length;
+  // Memoizing expensive calculations in a single pass where appropriate
+  const { totalMora, clientesEnMora, casosCriticos, promedioDias } = useMemo(() => {
+    let total = 0;
+    let criticalCount = 0;
+    let totalDias = 0;
+    const len = clientes.length;
 
-  const stats = [
+    for (let i = 0; i < len; i++) {
+      const c = clientes[i];
+      total += c.monto;
+      totalDias += c.diasMora;
+      if (c.diasMora >= 60) {
+        criticalCount++;
+      }
+    }
+
+    return {
+      totalMora: total,
+      clientesEnMora: len,
+      casosCriticos: criticalCount,
+      promedioDias: len > 0 ? totalDias / len : 0,
+    };
+  }, [clientes]);
+
+  const stats = useMemo(() => [
     { title: 'Mora Total', value: `${totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
     { title: 'Clientes en Mora', value: clientesEnMora, icon: <Users className="text-msc-dark" />, sub: 'Total deudores' },
     { title: 'Casos Críticos', value: casosCriticos, icon: <AlertTriangle className="text-red-600" />, sub: '+60 días de mora' },
     { title: 'Promedio Días', value: Math.round(promedioDias), icon: <Clock className="text-msc-dark" />, sub: 'Días de atraso' },
-  ];
+  ], [totalMora, clientesEnMora, casosCriticos, promedioDias]);
+
+  const lastThreeClientes = useMemo(() => clientes.slice(0, 3), [clientes]);
 
   return (
     <div className="space-y-6">
@@ -74,7 +95,7 @@ const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
         <div className="card">
           <h3 className="text-lg font-bold mb-4">Últimos Clientes en Mora</h3>
           <div className="space-y-4">
-            {clientes.slice(0, 3).map((cliente) => (
+            {lastThreeClientes.map((cliente) => (
               <div key={cliente.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
                 <div>
                   <p className="font-semibold text-sm">{cliente.nombre}</p>
@@ -96,4 +117,4 @@ const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
   );
 };
 
-export default Dashboard;
+export default React.memo(Dashboard);
