@@ -7,15 +7,20 @@ interface ClientesTableProps {
   clientes: Cliente[];
 }
 
-const ClientesTable: React.FC<ClientesTableProps> = ({ clientes }) => {
+const ClientesTable: React.FC<ClientesTableProps> = React.memo(({ clientes }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const filteredClientes = clientes.filter(c =>
-    c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.ci.includes(searchTerm)
-  );
+  // Memoize filtered clientes to prevent redundant overhead during parent-triggered re-renders.
+  // Normalize both target fields and search term to maintain consistent filter behavior.
+  const filteredClientes = React.useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    return clientes.filter(c =>
+      c.nombre.toLowerCase().includes(term) ||
+      c.ci.toLowerCase().includes(term)
+    );
+  }, [clientes, searchTerm]);
 
   const getStatusBadge = (estado: Cliente['estado']) => {
     switch (estado) {
@@ -108,6 +113,6 @@ const ClientesTable: React.FC<ClientesTableProps> = ({ clientes }) => {
       />
     </div>
   );
-};
+});
 
 export default ClientesTable;

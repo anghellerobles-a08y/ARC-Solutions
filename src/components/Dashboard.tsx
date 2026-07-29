@@ -8,18 +8,38 @@ interface DashboardProps {
   chartData: ChartData[];
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
-  const totalMora = clientes.reduce((acc, curr) => acc + curr.monto, 0);
-  const clientesEnMora = clientes.length;
-  const casosCriticos = clientes.filter(c => c.diasMora >= 60).length;
-  const promedioDias = clientes.reduce((acc, curr) => acc + curr.diasMora, 0) / clientes.length;
+const Dashboard: React.FC<DashboardProps> = React.memo(({ clientes, chartData }) => {
+  // Consolidate data transformations and stats into a single O(N) pass within useMemo
+  // to avoid redundant calculations and prevent division-by-zero errors.
+  const { totalMora, clientesEnMora, casosCriticos, promedioDias } = React.useMemo(() => {
+    let total = 0;
+    let criticalCount = 0;
+    let totalDays = 0;
+    const len = clientes.length;
 
-  const stats = [
+    for (let i = 0; i < len; i++) {
+      const c = clientes[i];
+      total += c.monto;
+      totalDays += c.diasMora;
+      if (c.diasMora >= 60) {
+        criticalCount++;
+      }
+    }
+
+    return {
+      totalMora: total,
+      clientesEnMora: len,
+      casosCriticos: criticalCount,
+      promedioDias: len > 0 ? totalDays / len : 0,
+    };
+  }, [clientes]);
+
+  const stats = React.useMemo(() => [
     { title: 'Mora Total', value: `${totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
     { title: 'Clientes en Mora', value: clientesEnMora, icon: <Users className="text-msc-dark" />, sub: 'Total deudores' },
     { title: 'Casos Críticos', value: casosCriticos, icon: <AlertTriangle className="text-red-600" />, sub: '+60 días de mora' },
     { title: 'Promedio Días', value: Math.round(promedioDias), icon: <Clock className="text-msc-dark" />, sub: 'Días de atraso' },
-  ];
+  ], [totalMora, clientesEnMora, casosCriticos, promedioDias]);
 
   return (
     <div className="space-y-6">
@@ -94,6 +114,6 @@ const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
       </div>
     </div>
   );
-};
+});
 
 export default Dashboard;
