@@ -8,18 +8,23 @@ interface DashboardProps {
   chartData: ChartData[];
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
-  const totalMora = clientes.reduce((acc, curr) => acc + curr.monto, 0);
-  const clientesEnMora = clientes.length;
-  const casosCriticos = clientes.filter(c => c.diasMora >= 60).length;
-  const promedioDias = clientes.reduce((acc, curr) => acc + curr.diasMora, 0) / clientes.length;
+import { useMemo } from 'react';
 
-  const stats = [
-    { title: 'Mora Total', value: `${totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
-    { title: 'Clientes en Mora', value: clientesEnMora, icon: <Users className="text-msc-dark" />, sub: 'Total deudores' },
-    { title: 'Casos Críticos', value: casosCriticos, icon: <AlertTriangle className="text-red-600" />, sub: '+60 días de mora' },
-    { title: 'Promedio Días', value: Math.round(promedioDias), icon: <Clock className="text-msc-dark" />, sub: 'Días de atraso' },
-  ];
+const Dashboard = React.memo<DashboardProps>(({ clientes, chartData }) => {
+  // Optimize statistical calculations by wrapping them in a single O(N) useMemo pass
+  const stats = useMemo(() => {
+    const totalMora = clientes.reduce((acc, curr) => acc + curr.monto, 0);
+    const clientesEnMora = clientes.length;
+    const casosCriticos = clientes.filter(c => c.diasMora >= 60).length;
+    const promedioDias = clientesEnMora > 0 ? (clientes.reduce((acc, curr) => acc + curr.diasMora, 0) / clientesEnMora) : 0;
+
+    return [
+      { title: 'Mora Total', value: `${totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
+      { title: 'Clientes en Mora', value: clientesEnMora, icon: <Users className="text-msc-dark" />, sub: 'Total deudores' },
+      { title: 'Casos Críticos', value: casosCriticos, icon: <AlertTriangle className="text-red-600" />, sub: '+60 días de mora' },
+      { title: 'Promedio Días', value: Math.round(promedioDias), icon: <Clock className="text-msc-dark" />, sub: 'Días de atraso' },
+    ];
+  }, [clientes]);
 
   return (
     <div className="space-y-6">
@@ -94,6 +99,6 @@ const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
       </div>
     </div>
   );
-};
+});
 
 export default Dashboard;
