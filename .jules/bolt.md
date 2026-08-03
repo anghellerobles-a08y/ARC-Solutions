@@ -1,0 +1,3 @@
+## 2024-11-20 - Bundle Size Optimization with Code Splitting & Memoization
+**Learning:** Initial JS bundle size exceeded Vite standard warning limit of 500kB (at ~538kB) because of heavy dependency on charting tools (Recharts) inside the main bundle, even though the users on other pages do not need it loaded initially. By utilizing React.lazy and Suspense, we isolated Dashboard, ClientesTable, and Reportes. This successfully reduced initial JS size down to ~152kB (~72% reduction).
+**Action:** Always identify heavy dependencies like charting components or heavy UI modals and dynamically load them through React.lazy / Suspense fallback, especially when they occupy tabs or secondary views in single-page applications.
