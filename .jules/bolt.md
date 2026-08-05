@@ -1,0 +1,3 @@
+## 2025-02-14 - Code Splitting & Memoization in Mora BMSC
+**Learning:** Initial production JavaScript bundle size was 538.42 kB, triggering Vite's 500 kB performance warning because all heavy dependencies (like Recharts used in Dashboard) and client data tables were compiled into a single initial bundle.
+**Action:** Implement React.lazy with Suspense in App.tsx to code-split App tabs (Dashboard, ClientesTable, and Reportes), significantly reducing the initial bundle load. Additionally, memoize calculations in Dashboard.tsx and filtering in ClientesTable.tsx to reduce parent-triggered component re-renders.
