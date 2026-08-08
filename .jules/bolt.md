@@ -1,0 +1,3 @@
+## 2024-08-08 - Code Splitting for Heavy Recharts Dashboard
+**Learning:** In a Vite React SPA, packing heavy visualization packages like Recharts along with general tables and layout components into a single main bundle easily pushes the initial JS size past the 500kB warning threshold. This slows down the initial Page Load and Time To Interactive (TTI).
+**Action:** Use React.lazy and Suspense to separate routes or tab views that import heavy packages (like Recharts) into dynamic import chunks. This allows the initial bundle size to drop substantially (e.g. from 538kB down to 152kB, a ~72% decrease), loading the heavy chart packages only when the user navigates to those specific tabs.
