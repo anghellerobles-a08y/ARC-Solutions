@@ -1,4 +1,4 @@
-import React from 'react';
+import { memo, useMemo, FC } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, Users, AlertTriangle, Clock } from 'lucide-react';
 import { Cliente, ChartData } from '../types';
@@ -8,18 +8,42 @@ interface DashboardProps {
   chartData: ChartData[];
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
-  const totalMora = clientes.reduce((acc, curr) => acc + curr.monto, 0);
-  const clientesEnMora = clientes.length;
-  const casosCriticos = clientes.filter(c => c.diasMora >= 60).length;
-  const promedioDias = clientes.reduce((acc, curr) => acc + curr.diasMora, 0) / clientes.length;
+const Dashboard: FC<DashboardProps> = memo(({ clientes, chartData }) => {
+  // Consolidate data reductions and statistics into a single O(N) pass to prevent redundant work
+  const statsData = useMemo(() => {
+    let totalMora = 0;
+    let casosCriticos = 0;
+    let totalDias = 0;
 
-  const stats = [
-    { title: 'Mora Total', value: `${totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
-    { title: 'Clientes en Mora', value: clientesEnMora, icon: <Users className="text-msc-dark" />, sub: 'Total deudores' },
-    { title: 'Casos Críticos', value: casosCriticos, icon: <AlertTriangle className="text-red-600" />, sub: '+60 días de mora' },
-    { title: 'Promedio Días', value: Math.round(promedioDias), icon: <Clock className="text-msc-dark" />, sub: 'Días de atraso' },
-  ];
+    for (let i = 0; i < clientes.length; i++) {
+      const c = clientes[i];
+      totalMora += c.monto;
+      totalDias += c.diasMora;
+      if (c.diasMora >= 60) {
+        casosCriticos++;
+      }
+    }
+
+    const clientesEnMora = clientes.length;
+    // Safely check for empty arrays to prevent division-by-zero errors
+    const promedioDias = clientesEnMora > 0 ? totalDias / clientesEnMora : 0;
+
+    return {
+      totalMora,
+      clientesEnMora,
+      casosCriticos,
+      promedioDias
+    };
+  }, [clientes]);
+
+  const stats = useMemo(() => [
+    { title: 'Mora Total', value: `${statsData.totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
+    { title: 'Clientes en Mora', value: statsData.clientesEnMora, icon: <Users className="text-msc-dark" />, sub: 'Total deudores' },
+    { title: 'Casos Críticos', value: statsData.casosCriticos, icon: <AlertTriangle className="text-red-600" />, sub: '+60 días de mora' },
+    { title: 'Promedio Días', value: Math.round(statsData.promedioDias), icon: <Clock className="text-msc-dark" />, sub: 'Días de atraso' },
+  ], [statsData]);
+
+  const topClientes = useMemo(() => clientes.slice(0, 3), [clientes]);
 
   return (
     <div className="space-y-6">
@@ -74,7 +98,7 @@ const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
         <div className="card">
           <h3 className="text-lg font-bold mb-4">Últimos Clientes en Mora</h3>
           <div className="space-y-4">
-            {clientes.slice(0, 3).map((cliente) => (
+            {topClientes.map((cliente) => (
               <div key={cliente.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
                 <div>
                   <p className="font-semibold text-sm">{cliente.nombre}</p>
@@ -94,6 +118,6 @@ const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
       </div>
     </div>
   );
-};
+});
 
 export default Dashboard;
