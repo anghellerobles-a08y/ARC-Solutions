@@ -1,9 +1,19 @@
-import { useState } from 'react';
-import { LayoutDashboard, Users, FileBarChart, LogOut, Bell } from 'lucide-react';
-import Dashboard from './components/Dashboard';
-import ClientesTable from './components/ClientesTable';
-import Reportes from './components/Reportes';
+import { useState, lazy, Suspense } from 'react';
+import { LayoutDashboard, Users, FileBarChart, LogOut, Bell, Loader2 } from 'lucide-react';
 import { Cliente, ChartData } from './types';
+
+// Lazy load the tab components to reduce initial bundle size and split heavy libraries like Recharts
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const ClientesTable = lazy(() => import('./components/ClientesTable'));
+const Reportes = lazy(() => import('./components/Reportes'));
+
+// Loading spinner component using brand colors
+const TabLoadingFallback = () => (
+  <div className="flex flex-col items-center justify-center min-h-[300px] gap-2">
+    <Loader2 className="animate-spin text-msc-green" size={40} />
+    <span className="text-sm font-semibold text-slate-500">Cargando...</span>
+  </div>
+);
 
 const MOCK_CLIENTES: Cliente[] = [
   { id: 1, nombre: 'Carlos Méndez', ci: '12345678', monto: 12500, diasMora: 45, estado: 'warning' },
@@ -102,15 +112,17 @@ function App() {
 
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto p-8">
-          {activeTab === 'dashboard' && (
-            <Dashboard clientes={MOCK_CLIENTES} chartData={MOCK_CHART_DATA} />
-          )}
-          {activeTab === 'clientes' && (
-            <ClientesTable clientes={MOCK_CLIENTES} />
-          )}
-          {activeTab === 'reportes' && (
-            <Reportes />
-          )}
+          <Suspense fallback={<TabLoadingFallback />}>
+            {activeTab === 'dashboard' && (
+              <Dashboard clientes={MOCK_CLIENTES} chartData={MOCK_CHART_DATA} />
+            )}
+            {activeTab === 'clientes' && (
+              <ClientesTable clientes={MOCK_CLIENTES} />
+            )}
+            {activeTab === 'reportes' && (
+              <Reportes />
+            )}
+          </Suspense>
         </div>
       </main>
     </div>
