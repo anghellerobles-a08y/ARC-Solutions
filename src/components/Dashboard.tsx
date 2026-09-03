@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, Users, AlertTriangle, Clock } from 'lucide-react';
 import { Cliente, ChartData } from '../types';
@@ -9,10 +9,28 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
-  const totalMora = clientes.reduce((acc, curr) => acc + curr.monto, 0);
+  // Performance optimization: Memoize statistical calculations in a single pass O(N) to avoid multiple array iterations on re-renders
+  const { totalMora, casosCriticos, promedioDias } = useMemo(() => {
+    if (!clientes.length) return { totalMora: 0, casosCriticos: 0, promedioDias: 0 };
+    let totalMoraAcc = 0;
+    let casosCriticosAcc = 0;
+    let totalDiasAcc = 0;
+
+    for (let i = 0; i < clientes.length; i++) {
+      const c = clientes[i];
+      totalMoraAcc += c.monto;
+      if (c.diasMora >= 60) casosCriticosAcc++;
+      totalDiasAcc += c.diasMora;
+    }
+
+    return {
+      totalMora: totalMoraAcc,
+      casosCriticos: casosCriticosAcc,
+      promedioDias: totalDiasAcc / clientes.length,
+    };
+  }, [clientes]);
+
   const clientesEnMora = clientes.length;
-  const casosCriticos = clientes.filter(c => c.diasMora >= 60).length;
-  const promedioDias = clientes.reduce((acc, curr) => acc + curr.diasMora, 0) / clientes.length;
 
   const stats = [
     { title: 'Mora Total', value: `${totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
