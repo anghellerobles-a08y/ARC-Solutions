@@ -1,7 +1,7 @@
-import React from 'react';
+import { FC, memo } from 'react';
 import { Target, BarChart3, ClipboardCheck, CheckCircle2 } from 'lucide-react';
 
-const Reportes: React.FC = () => {
+const Reportes: FC = memo(() => {
   const metrics = [
     {
       title: 'Eficiencia de Cobranza',
@@ -64,6 +64,6 @@ const Reportes: React.FC = () => {
       </div>
     </div>
   );
-};
+});
 
 export default Reportes;
