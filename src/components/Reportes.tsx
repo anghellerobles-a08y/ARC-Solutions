@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Target, BarChart3, ClipboardCheck, CheckCircle2 } from 'lucide-react';
 
-const Reportes: React.FC = () => {
+// Performance Optimization: Memoize Reportes component to prevent unnecessary re-renders.
+const ReportesComponent: React.FC = () => {
   const metrics = [
     {
       title: 'Eficiencia de Cobranza',
@@ -66,4 +67,5 @@ const Reportes: React.FC = () => {
   );
 };
 
+const Reportes = memo(ReportesComponent);
 export default Reportes;

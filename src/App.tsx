@@ -1,9 +1,12 @@
-import { useState } from 'react';
-import { LayoutDashboard, Users, FileBarChart, LogOut, Bell } from 'lucide-react';
-import Dashboard from './components/Dashboard';
-import ClientesTable from './components/ClientesTable';
-import Reportes from './components/Reportes';
+import { useState, lazy, Suspense } from 'react';
+import { LayoutDashboard, Users, FileBarChart, LogOut, Bell, Loader2 } from 'lucide-react';
 import { Cliente, ChartData } from './types';
+
+// Performance Optimization: Code split heavy components (e.g., Dashboard using Recharts)
+// using React.lazy to reduce initial JavaScript bundle size below Vite warning threshold.
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const ClientesTable = lazy(() => import('./components/ClientesTable'));
+const Reportes = lazy(() => import('./components/Reportes'));
 
 const MOCK_CLIENTES: Cliente[] = [
   { id: 1, nombre: 'Carlos Méndez', ci: '12345678', monto: 12500, diasMora: 45, estado: 'warning' },
@@ -102,15 +105,23 @@ function App() {
 
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto p-8">
-          {activeTab === 'dashboard' && (
-            <Dashboard clientes={MOCK_CLIENTES} chartData={MOCK_CHART_DATA} />
-          )}
-          {activeTab === 'clientes' && (
-            <ClientesTable clientes={MOCK_CLIENTES} />
-          )}
-          {activeTab === 'reportes' && (
-            <Reportes />
-          )}
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center h-64 text-msc-green">
+                <Loader2 className="w-8 h-8 animate-spin" />
+              </div>
+            }
+          >
+            {activeTab === 'dashboard' && (
+              <Dashboard clientes={MOCK_CLIENTES} chartData={MOCK_CHART_DATA} />
+            )}
+            {activeTab === 'clientes' && (
+              <ClientesTable clientes={MOCK_CLIENTES} />
+            )}
+            {activeTab === 'reportes' && (
+              <Reportes />
+            )}
+          </Suspense>
         </div>
       </main>
     </div>
