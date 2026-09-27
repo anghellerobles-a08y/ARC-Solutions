@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo, useMemo, useCallback } from 'react';
 import { Search, Filter, Download } from 'lucide-react';
 import { Cliente } from '../types';
 import GestionModal from './GestionModal';
@@ -7,15 +7,20 @@ interface ClientesTableProps {
   clientes: Cliente[];
 }
 
-const ClientesTable: React.FC<ClientesTableProps> = ({ clientes }) => {
+// Performance Optimization: Memoize ClientesTable component and search filtering
+// to avoid unnecessary re-filtering or re-renders during state updates.
+const ClientesTableComponent: React.FC<ClientesTableProps> = ({ clientes }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const filteredClientes = clientes.filter(c =>
-    c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.ci.includes(searchTerm)
-  );
+  const filteredClientes = useMemo(() => {
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) return clientes;
+    return clientes.filter(
+      (c) => c.nombre.toLowerCase().includes(term) || c.ci.includes(term)
+    );
+  }, [clientes, searchTerm]);
 
   const getStatusBadge = (estado: Cliente['estado']) => {
     switch (estado) {
@@ -25,10 +30,10 @@ const ClientesTable: React.FC<ClientesTableProps> = ({ clientes }) => {
     }
   };
 
-  const handleGestionar = (cliente: Cliente) => {
+  const handleGestionar = useCallback((cliente: Cliente) => {
     setSelectedCliente(cliente);
     setIsModalOpen(true);
-  };
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -110,4 +115,5 @@ const ClientesTable: React.FC<ClientesTableProps> = ({ clientes }) => {
   );
 };
 
+const ClientesTable = memo(ClientesTableComponent);
 export default ClientesTable;
