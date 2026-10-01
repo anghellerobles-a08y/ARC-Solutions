@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Target, BarChart3, ClipboardCheck, CheckCircle2 } from 'lucide-react';
 
 const Reportes: React.FC = () => {
@@ -66,4 +66,4 @@ const Reportes: React.FC = () => {
   );
 };
 
-export default Reportes;
+export default memo(Reportes);
