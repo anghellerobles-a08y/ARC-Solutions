@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, Users, AlertTriangle, Clock } from 'lucide-react';
 import { Cliente, ChartData } from '../types';
@@ -9,10 +9,29 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
-  const totalMora = clientes.reduce((acc, curr) => acc + curr.monto, 0);
-  const clientesEnMora = clientes.length;
-  const casosCriticos = clientes.filter(c => c.diasMora >= 60).length;
-  const promedioDias = clientes.reduce((acc, curr) => acc + curr.diasMora, 0) / clientes.length;
+  // Memoize aggregated metrics to avoid re-calculating statistics on unrelated parent re-renders
+  const { totalMora, clientesEnMora, casosCriticos, promedioDias } = useMemo(() => {
+    if (!clientes.length) return { totalMora: 0, clientesEnMora: 0, casosCriticos: 0, promedioDias: 0 };
+
+    let sumMonto = 0;
+    let sumDias = 0;
+    let criticosCount = 0;
+
+    for (const c of clientes) {
+      sumMonto += c.monto;
+      sumDias += c.diasMora;
+      if (c.diasMora >= 60) {
+        criticosCount++;
+      }
+    }
+
+    return {
+      totalMora: sumMonto,
+      clientesEnMora: clientes.length,
+      casosCriticos: criticosCount,
+      promedioDias: sumDias / clientes.length
+    };
+  }, [clientes]);
 
   const stats = [
     { title: 'Mora Total', value: `${totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
