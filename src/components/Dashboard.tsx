@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, Users, AlertTriangle, Clock } from 'lucide-react';
 import { Cliente, ChartData } from '../types';
@@ -8,18 +8,40 @@ interface DashboardProps {
   chartData: ChartData[];
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
-  const totalMora = clientes.reduce((acc, curr) => acc + curr.monto, 0);
-  const clientesEnMora = clientes.length;
-  const casosCriticos = clientes.filter(c => c.diasMora >= 60).length;
-  const promedioDias = clientes.reduce((acc, curr) => acc + curr.diasMora, 0) / clientes.length;
+const Dashboard: FC<DashboardProps> = ({ clientes, chartData }) => {
+  // Consolidate metric calculations into a single O(N) pass memoized on clientes
+  const { totalMora, casosCriticos, promedioDias, clientesEnMora } = useMemo(() => {
+    let totalMora = 0;
+    let casosCriticos = 0;
+    let totalDias = 0;
+    const len = clientes.length;
 
-  const stats = [
-    { title: 'Mora Total', value: `${totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
-    { title: 'Clientes en Mora', value: clientesEnMora, icon: <Users className="text-msc-dark" />, sub: 'Total deudores' },
-    { title: 'Casos Críticos', value: casosCriticos, icon: <AlertTriangle className="text-red-600" />, sub: '+60 días de mora' },
-    { title: 'Promedio Días', value: Math.round(promedioDias), icon: <Clock className="text-msc-dark" />, sub: 'Días de atraso' },
-  ];
+    for (let i = 0; i < len; i++) {
+      const c = clientes[i];
+      totalMora += c.monto;
+      totalDias += c.diasMora;
+      if (c.diasMora >= 60) {
+        casosCriticos++;
+      }
+    }
+
+    return {
+      totalMora,
+      casosCriticos,
+      promedioDias: len > 0 ? Math.round(totalDias / len) : 0,
+      clientesEnMora: len,
+    };
+  }, [clientes]);
+
+  const stats = useMemo(
+    () => [
+      { title: 'Mora Total', value: `${totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
+      { title: 'Clientes en Mora', value: clientesEnMora, icon: <Users className="text-msc-dark" />, sub: 'Total deudores' },
+      { title: 'Casos Críticos', value: casosCriticos, icon: <AlertTriangle className="text-red-600" />, sub: '+60 días de mora' },
+      { title: 'Promedio Días', value: promedioDias, icon: <Clock className="text-msc-dark" />, sub: 'Días de atraso' },
+    ],
+    [totalMora, clientesEnMora, casosCriticos, promedioDias]
+  );
 
   return (
     <div className="space-y-6">
