@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, Users, AlertTriangle, Clock } from 'lucide-react';
 import { Cliente, ChartData } from '../types';
@@ -8,18 +8,39 @@ interface DashboardProps {
   chartData: ChartData[];
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ clientes, chartData }) => {
-  const totalMora = clientes.reduce((acc, curr) => acc + curr.monto, 0);
-  const clientesEnMora = clientes.length;
-  const casosCriticos = clientes.filter(c => c.diasMora >= 60).length;
-  const promedioDias = clientes.reduce((acc, curr) => acc + curr.diasMora, 0) / clientes.length;
+const Dashboard: FC<DashboardProps> = ({ clientes, chartData }) => {
+  // Consolidate statistical calculations into a single O(N) pass inside useMemo to avoid repeated iterations and handle empty state safely
+  const { totalMora, clientesEnMora, casosCriticos, promedioDias } = useMemo(() => {
+    let total = 0;
+    let critical = 0;
+    let totalDays = 0;
+    const count = clientes.length;
 
-  const stats = [
+    for (let i = 0; i < count; i++) {
+      const c = clientes[i];
+      total += c.monto;
+      if (c.diasMora >= 60) {
+        critical++;
+      }
+      totalDays += c.diasMora;
+    }
+
+    const avgDays = count > 0 ? totalDays / count : 0;
+
+    return {
+      totalMora: total,
+      clientesEnMora: count,
+      casosCriticos: critical,
+      promedioDias: avgDays,
+    };
+  }, [clientes]);
+
+  const stats = useMemo(() => [
     { title: 'Mora Total', value: `${totalMora.toLocaleString()} Bs`, icon: <TrendingUp className="text-msc-dark" />, sub: 'Deuda acumulada' },
     { title: 'Clientes en Mora', value: clientesEnMora, icon: <Users className="text-msc-dark" />, sub: 'Total deudores' },
     { title: 'Casos Críticos', value: casosCriticos, icon: <AlertTriangle className="text-red-600" />, sub: '+60 días de mora' },
     { title: 'Promedio Días', value: Math.round(promedioDias), icon: <Clock className="text-msc-dark" />, sub: 'Días de atraso' },
-  ];
+  ], [totalMora, clientesEnMora, casosCriticos, promedioDias]);
 
   return (
     <div className="space-y-6">

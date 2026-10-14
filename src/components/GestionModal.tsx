@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC } from 'react';
 import { X, User, CreditCard, Clock, CheckCircle } from 'lucide-react';
 import { Cliente } from '../types';
 
@@ -8,7 +8,7 @@ interface GestionModalProps {
   onClose: () => void;
 }
 
-const GestionModal: React.FC<GestionModalProps> = ({ cliente, isOpen, onClose }) => {
+const GestionModal: FC<GestionModalProps> = ({ cliente, isOpen, onClose }) => {
   if (!isOpen || !cliente) return null;
 
   return (
