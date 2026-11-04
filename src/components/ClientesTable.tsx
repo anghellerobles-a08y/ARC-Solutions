@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, Filter, Download } from 'lucide-react';
 import { Cliente } from '../types';
 import GestionModal from './GestionModal';
@@ -7,15 +7,24 @@ interface ClientesTableProps {
   clientes: Cliente[];
 }
 
-const ClientesTable: React.FC<ClientesTableProps> = ({ clientes }) => {
+// BOLT PERFORMANCE OPTIMIZATION:
+// 1. React.memo prevents unnecessary table re-renders when parent state changes
+// 2. useMemo caches filtered results so keystrokes / search changes only re-filter
+//    when inputs or client lists actually change.
+const ClientesTable: React.FC<ClientesTableProps> = React.memo(({ clientes }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const filteredClientes = clientes.filter(c =>
-    c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.ci.includes(searchTerm)
-  );
+  const filteredClientes = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return clientes;
+
+    return clientes.filter(c =>
+      c.nombre.toLowerCase().includes(term) ||
+      c.ci.includes(term)
+    );
+  }, [clientes, searchTerm]);
 
   const getStatusBadge = (estado: Cliente['estado']) => {
     switch (estado) {
@@ -108,6 +117,6 @@ const ClientesTable: React.FC<ClientesTableProps> = ({ clientes }) => {
       />
     </div>
   );
-};
+});
 
 export default ClientesTable;
